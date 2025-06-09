@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="/vite.svg"
+		/>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Vite + TS</title>
+	</head>
+	<body>
+		<script src="https://js.puter.com/v2/"></script>
+
+		<div id="app">
+			<h3 class="title">Check Report Tool</h3>
+			<input
+				type="file"
+				id="image-input"
+				accept="image/*"
+				multiple
+				hidden
+			/>
+			<label
+				for="image-input"
+				class="image-button"
+				>Choose File Here</label
+			>
+			<button id="process-button">Start analizing</button>
+
+			<div
+				id="drop-area"
+				contenteditable="true"
+			>
+				👉 Paste an image here (Ctrl+V)
+			</div>
+
+			<div style="margin-top: 20px">
+				<h4>Preview:</h4>
+				<div id="images-preview"></div>
+			</div>
+
+			<div class="summary">
+				<h4>Summary:</h4>
+			</div>
+		</div>
+		<script
+			type="module"
+			src="/src/main.ts"
+		></script>
+		<script type="module">
+			import members from './members.json'
+			import { createImagePreviewElement, prompt } from './src/main.ts'
+
+			let files = []
+
+			const imageInput = document.getElementById('image-input')
+			const imagesPreview = document.getElementById('images-preview')
+			const processButton = document.getElementById('process-button')
+			const dropArea = document.getElementById('drop-area')
+
+			window.onfocus = () => {
+				dropArea.focus()
+			}
+
+			dropArea.addEventListener('paste', function (e) {
+				e.preventDefault()
+
+				const items = e.clipboardData?.items
+				if (!items) return
+
+				for (const item of items) {
+					if (item.type.startsWith('image/')) {
+						const file = item.getAsFile()
+						const { div, closeButton, image } = createImagePreviewElement(file)
+						closeButton.onclick = () => {
+							image.remove()
+							files = files.filter(f => f !== file)
+						}
+
+						imagesPreview.appendChild(div)
+						files.push(file)
+					}
+				}
+			})
+
+			imageInput.addEventListener('change', async function (e) {
+				const selectedFiles = [...e.target.files]
+				if (selectedFiles.length === 0) {
+					console.log(selectedFiles.length)
+					return
+				}
+
+				selectedFiles.forEach(file => {
+					const { div, closeButton, image } = createImagePreviewElement(file)
+					closeButton.onclick = () => {
+						image.remove()
+						files = files.filter(f => f !== file)
+					}
+
+					imagesPreview.appendChild(div)
+					files.push(file)
+				})
+			})
+
+			processButton.onclick = () => {
+				processImage()
+			}
+
+			async function analyzeImage(file) {
+				const dataUrl = await new Promise(resolve => {
+					const reader = new FileReader()
+					reader.onload = () => resolve(reader.result)
+					reader.readAsDataURL(file)
+				})
+				const text = await puter.ai.img2txt(dataUrl)
+				return text
+			}
+
+			async function processImage() {
+				if (files.length === 0) {
+					alert('Please select an image first')
+					return
+				}
+
+				processButton.textContent = 'Analyzing image...'
+				processButton.disabled = true
+
+				try {
+					// Convert file to data URL
+					const responses = await Promise.all(files.map(file => analyzeImage(file)))
+					const result = responses.join('\n')
+
+					console.log(result)
+
+					const chatResult = await puter.ai.chat(prompt(result))
+
+					console.log(chatResult)
+				} catch (error) {
+					console.log(error)
+				} finally {
+					processButton.textContent = 'Start analyzing'
+					processButton.disabled = false
+				}
+			}
+		</script>
+	</body>
+</html>
