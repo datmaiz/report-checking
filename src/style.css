@@ -8,20 +8,23 @@ body {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
-  font-family: Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f5f7fa;
 }
 
 #app {
   width: 100%;
-  max-width: 1440px;
-  padding-inline: 48px;
+  max-width: 1200px;
+  padding: 32px 48px;
   display: flex;
   flex-direction: column;
+  gap: 24px;
 }
 
 .title {
-  font-size: 48px;
-  margin-top: 12px;
+  font-size: 36px;
+  color: #1a1f36;
+  margin-bottom: 12px;
   text-align: center;
 }
 
@@ -31,7 +34,6 @@ body {
   overflow: auto;
   align-items: center;
   gap: 20px;
-
 }
 
 #image-preview>img,
@@ -41,15 +43,22 @@ body {
   height: auto;
 }
 
-button,
-.image-button {
-  border: 0px solid;
+button {
+  border: none;
   font: inherit;
   padding: 12px 24px;
   border-radius: 8px;
-  background-color: #007aff;
+  background-color: #3366ff;
   color: white;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+button:hover {
+  background-color: #2952cc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(51, 102, 255, 0.15);
 }
 
 .image-button {
@@ -60,8 +69,9 @@ button,
 
 #process-button {
   position: fixed;
-  top: 10px;
+  top: 20px;
   right: 20px;
+  z-index: 9;
 }
 
 .image-preview-container {
@@ -77,41 +87,99 @@ button,
   background: transparent;
 }
 
-#report-text-area {
-  margin-top: 48px;
-  height: 20lh;
-  outline: none;
-  padding: 12px 18px;
-  border-radius: 10px;
+.area-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-#drop-area:focus {
-  border: 2px dashed #000;
+.report-text-area-container {
+  position: relative;
+  width: 100%;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.report-text-area {
+  width: 100%;
+  height: 160px;
+  outline: none;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.report-text-area:focus {
+  border-color: #3366ff;
+}
+
+.delete-area-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  background-color: #dc2626;
+}
+
+.delete-area-button:hover {
+  background-color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
 }
 
 .summary {
-  margin-top: 20px;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.summary h4 {
+  font-size: 20px;
+  color: #1a1f36;
+  margin-bottom: 16px;
+}
+
+.summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.summary-list h3 {
+  color: #4b5563;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.summary-list p,
+.summary-list li {
+  color: #1f2937;
+  line-height: 1.5;
 }
 
 #loading-layer.load {
-  position: absolute;
+  position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 999;
-  background-color: rgba(0, 0, 0, 0.3);
-  ;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
 }
 
 .spinner {
-  display: block;
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   border: 3px solid;
-  border-color: #FFF transparent #FFF transparent;
+  border-color: #fff transparent #fff transparent;
   border-radius: 50%;
-  animation: spin-anim 1.2s linear infinite;
+  animation: spin-anim 1s linear infinite;
 }
 
 @keyframes spin-anim {
@@ -122,4 +190,9 @@ button,
   100% {
     transform: rotate(360deg);
   }
+}
+
+#add-area {
+  align-self: flex-end;
+  margin-bottom: 16px;
 }
