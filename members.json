@@ -26,14 +26,10 @@
 	},
 	{
 		"Thread": "Python & AI",
-		"Members": [
-			"Đặng Nguyên Giáp",
-			"Nguyễn Huyền Trang",
-			"Bùi Khắc Nhật Thanh",
-			"Võ Đình Hải",
-			"Lê Đức Thọ",
-			"Trịnh Ngọc Châu",
-			"Lê Văn Quốc Huy"
-		]
+		"Members": ["Đặng Nguyên Giáp", "Bùi Khắc Nhật Thanh", "Võ Đình Hải", "Trịnh Ngọc Châu", "Lê Văn Quốc Huy"]
+	},
+	{
+		"Thread": "UI/UX",
+		"Members": ["Đặng Đoàn Châu Thư", "Võ Thị Thùy Sương"]
 	}
 ]
