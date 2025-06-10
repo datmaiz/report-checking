@@ -1,68 +1,127 @@
+import axios from 'axios'
 import members from '../members.json'
 import './style.css'
+import { API_KEY, prompt } from './constants'
+import type { AnalysisResult } from './type'
 
-export function createImagePreviewElement(file: Blob) {
-	const image = document.createElement('img')
-	const div = document.createElement('div')
-	const closeButton = document.createElement('button')
+const processButton = document.getElementById('process-button')
+const reportTextArea = document.getElementById('report-text-area') as HTMLTextAreaElement
+const loadingLayer = document.getElementById('loading-layer')
+const summaryList = document.querySelector('.summary-list')!
 
-	// Div
-	div.className = 'image-preview-container'
+let summaryReports: AnalysisResult[] = []
 
-	// Show image preview
-	image.src = URL.createObjectURL(file)
-	image.classList.add('image-preview')
-
-	// Close image preview
-	closeButton.textContent = 'X'
-	closeButton.classList.add('close-button')
-
-	div.appendChild(image)
-	div.appendChild(closeButton)
-
-	return { div, image, closeButton }
+window.onfocus = () => {
+	reportTextArea.focus()
 }
 
-export const prompt = (result: string) => `PHÂN TÍCH REPORT MICROSOFT TEAMS
-
-						NỘI DUNG TEXT ĐÃ CHUYỂN ĐỔI TỪ ẢNH (CÓ THỂ CÓ LỖI OCR):
-						${result}
-
-						DANH SÁCH CÁC NHÓM VÀ THÀNH VIÊN CHUẨN:
-						${JSON.stringify(members, null, 2)}
-
-						HƯỚNG DẪN PHÂN TÍCH:
-						Trong nội dung text trên (có thể có lỗi OCR tiếng Việt) bao gồm:
-						1. Thông báo từ bot có format:
-							📒** [Tên Group] - Daily Report**
-							🗓️ **Date:** [Ngày]
-							**[Tên Mentor]: **[Danh sách mentee]**
-							
-						2. Các bài report của thành viên có format:
-							[Tên người report]
-							Hi [Tên mentor], Below is my status today:
-							[Nội dung report...]
-
-						LƯU Ý QUAN TRỌNG VỀ OCR:
-						- Tên tiếng Việt có thể bị lỗi OCR (ví dụ: ô->o, ă->a, đ->d, etc.)
-						- Hãy sử dụng fuzzy matching để so khớp tên
-						- Ưu tiên khớp từ danh sách Members CHUẨN thay vì tin tưởng hoàn toàn vào OCR text
-						- Tìm các pattern tương tự: "Nguyễn" có thể thành "Nguyen", "Đỗ" thành "Do", etc.
-						- Nếu không chắc chắn về tên, hãy chọn tên gần nhất từ danh sách Members
-
-						NHIỆM VỤ:
-						- Từ text OCR, xác định nhóm nào đang được report
-						- Tìm tất cả tên người đã submit report (dùng fuzzy matching với danh sách Members)
-						- So sánh với danh sách thành viên CHUẨN để tìm ai chưa report
-						- LUÔN SỬ DỤNG tên CHUẨN từ danh sách Members trong kết quả
-
-						CHỈ TRẢ VỀ JSON THEO FORMAT SAU (SỬ DỤNG TÊN CHUẨN TỪ DANH SÁCH MEMBERS) (KHÔNG CÓ THÔNG TIN KHÁC):
+processButton &&
+	(processButton.onclick = async () => {
+		loadingLayer?.classList.add('load')
+		try {
+			const response = await axios.post(
+				`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${API_KEY}`,
+				{
+					contents: [
 						{
-							"thread_name": "<tên nhóm CHUẨN từ danh sách Members>",
-							"reported_users": ["<tên CHUẨN từ Members của người đã report>"],
-							"not_reported_users": ["<tên CHUẨN từ Members của người chưa report>"],
-							"total_members": <tổng số thành viên>,
-							"reported_count": <số người đã report>,
-							"not_reported_count": <số người chưa report>,
-							"ocr_confidence": "<high/medium/low - đánh giá độ tin cậy của việc matching>"
-						}`
+							parts: [{ text: prompt(reportTextArea?.value, members) }],
+						},
+					],
+				}
+			)
+
+			let cleanJson = response.data.candidates[0].content.parts[0].text.trim()
+
+			if (cleanJson.startsWith('```json')) {
+				cleanJson = cleanJson.slice(7) // xóa '```json'
+			}
+			if (cleanJson.endsWith('```')) {
+				cleanJson = cleanJson.slice(0, -3) // xóa '```'
+			}
+			console.log(cleanJson)
+			const result = JSON.parse(cleanJson) as AnalysisResult
+
+			summaryReports.push(result)
+			console.log(summaryReports)
+
+			loadingLayer?.classList.remove('load')
+
+			summarizeReport()
+		} catch (err) {
+			loadingLayer?.classList.remove('load')
+		}
+	})
+
+function summarizeReport() {
+	const summary = summaryReports
+		.map(item => {
+			return `
+		<h3>Thread nane:</h3> 
+		<p>${item.thread_name}</p>
+		<h3>List of not reported users:</h3> 
+		<ul>${
+			item.not_reported_users.length === 0
+				? '<li>None</li>'
+				: item.not_reported_users.map(item => `<li>${item}</li>`).toString()
+		}</ul>
+		<h3>Warnings:</h3> 
+		<ul>${
+			item.warnings.length === 0
+				? '<li>None</li>'
+				: item.warnings.map(war => `<li>Member: ${war.member}: ${war.warning_message}</li>`).join('')
+		}</ul>
+	`
+		})
+		.join('<hr/>')
+	summaryList.innerHTML = summary
+}
+
+function createSummaryItem(result: AnalysisResult) {
+	const container = document.createElement('div')
+	const threadLabel = document.createElement('h3')
+	const notReportedUsersLabel = document.createElement('h3')
+	const notReportedUsers = document.createElement('ul')
+	const warningLabel = document.createElement('h3')
+	const warnings = document.createElement('ul')
+
+	container.className = `summary-item ${result.thread_name.split(' ').join('')}`
+	threadLabel.className = 'thread-name'
+	threadLabel.textContent = result.thread_name
+	notReportedUsersLabel.className = 'not-reported-users-label'
+	notReportedUsersLabel.textContent = 'List of not reported users:'
+	notReportedUsers.className = 'not-reported-users'
+	result.not_reported_users.forEach(item => {
+		const li = document.createElement('li')
+		li.className = 'not-reported-user'
+		li.textContent = item
+		notReportedUsers.appendChild(li)
+	})
+	warningLabel.classList = 'warning-label'
+	warningLabel.textContent = 'Warnings'
+	result.warnings.forEach(war => {
+		const li = document.createElement('li')
+		li.classList = 'warning-item'
+		li.textContent = war.warning_message
+		if (war.reason) {
+			li.textContent += ` - Reason: ${war.reason}`
+		}
+
+		warnings.appendChild(li)
+	})
+
+	container.appendChild(threadLabel)
+	container.appendChild(notReportedUsersLabel)
+	container.appendChild(notReportedUsers)
+	if (result.warnings.length > 0) {
+		container.appendChild(warningLabel)
+		container.appendChild(warnings)
+	}
+
+	container.innerHTML = `
+		Thread nane: ${result.thread_name}
+		List of not reported users: ${result.not_reported_users.length === 0 ? 'None' : result.not_reported_users.toString()}
+		Warnings: ${result.warnings.length === 0 ? 'None' : result.warnings.toString()}
+	`
+
+	return container
+}
