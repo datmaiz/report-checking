@@ -12,6 +12,9 @@ body {
 }
 
 #app {
+  width: 100%;
+  max-width: 1440px;
+  padding-inline: 48px;
   display: flex;
   flex-direction: column;
 }
@@ -74,12 +77,12 @@ button,
   background: transparent;
 }
 
-#drop-area {
-  border: 2px dashed #999;
-  padding: 30px;
-  text-align: center;
-  color: #555;
-  margin-top: 25px;
+#report-text-area {
+  margin-top: 48px;
+  height: 20lh;
+  outline: none;
+  padding: 12px 18px;
+  border-radius: 10px;
 }
 
 #drop-area:focus {
@@ -88,4 +91,35 @@ button,
 
 .summary {
   margin-top: 20px;
+}
+
+#loading-layer.load {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  background-color: rgba(0, 0, 0, 0.3);
+  ;
+}
+
+.spinner {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border: 3px solid;
+  border-color: #FFF transparent #FFF transparent;
+  border-radius: 50%;
+  animation: spin-anim 1.2s linear infinite;
+}
+
+@keyframes spin-anim {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
